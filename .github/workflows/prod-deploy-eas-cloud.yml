@@ -1,0 +1,165 @@
+name: "[PROD] Deploy EAS Cloud"
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: frontends/customer-mobile
+
+env: # Define a shared environment variable for android and ios build.
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_PROD }}
+  BUN_VERSION: 1.2.22
+
+jobs:
+  build-customer-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontends/customer-mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find or create comment for build status
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/find-or-create-comment
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun i --frozen-lockfile
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN_PROD }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Create .env file
+        run: |
+          echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_ANDROID_GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://admin-vimex.web.app" >> .env
+          echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://admin-vimex.web.app/api" >> .env
+          echo "EXPO_PUBLIC_APP_ENV=prod" >> .env
+      - name: Generate google-services.json
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PROD }}' > google-services.json
+          cat google-services.json
+
+      - name: Extract Web Client ID
+        run: |
+          EXPO_PUBLIC_APP_ENV=prod node ../../scripts/android-extract-web-client-id-from-google-service-json.js
+
+      - name: Update environment variables
+        shell: bash
+        run: |
+          bash ../../scripts/eas-env-sync.sh
+        env:
+          EAS_ENV: production
+
+      - name: Get Build Version
+        shell: bash
+        run: |
+          MAJOR_MINOR_VERSIONS=$(jq -r '.expo.version' app.json)
+          PATCH_VERSION=${{ github.run_number }}
+          APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
+          jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
+
+      - name: Remove google-services.json line from .gitignore
+        run: |
+          sed -i '/google-services.json/d' .gitignore
+      - name: Run Cloud Build for Android
+        id: build
+        run: |
+          eas build --profile=prod --platform=android --no-wait --non-interactive --verbose-logs
+        env:
+          NODE_ENV: production
+
+  build-driver-android:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/driver-mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun i --frozen-lockfile
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN_PROD }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Create .env file
+        run: |
+          echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.DRIVER_ANDROID_GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://admin-vimex.web.app" >> .env
+          echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://admin-vimex.web.app/api" >> .env
+          echo "EXPO_PUBLIC_APP_ENV=prod" >> .env
+      - name: Generate google-services.json
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON_DRIVER_APP_PROD }}' > google-services.json
+          cat google-services.json
+
+      - name: Extract Web Client ID
+        run: |
+          EXPO_PUBLIC_APP_ENV=prod node ../../scripts/android-extract-web-client-id-from-google-service-json.js
+
+      - name: Update environment variables
+        shell: bash
+        run: bash ../../scripts/eas-env-sync.sh
+        env:
+          EAS_ENV: production
+
+      - name: Get Build Version
+        shell: bash
+        run: |
+          MAJOR_MINOR_VERSIONS=$(jq -r '.expo.version' app.json)
+          PATCH_VERSION=${{ github.run_number }}
+          APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
+          jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
+
+      - name: Remove google-services.json line from .gitignore
+        run: |
+          sed -i '/google-services.json/d' .gitignore
+      - name: Run Cloud Build for Android
+        id: build
+        run: |
+          eas build --profile=prod --platform=android --no-wait --non-interactive
+        env:
+          NODE_ENV: production

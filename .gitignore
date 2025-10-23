@@ -1,0 +1,40 @@
+# Private repository submodule
+/private-repo/
+
+# Environment files
+.env
+.env.*
+
+# Build artifacts
+dist/
+build/
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# SSH keys (should never be committed)
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Firebase
+.firebase/
+.firebaserc
+
+# Bun
+.bun

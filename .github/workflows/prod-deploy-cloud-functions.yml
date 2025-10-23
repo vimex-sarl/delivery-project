@@ -1,0 +1,180 @@
+# This workflow deploys the cloud functions to Firebase on manual dispatch.
+# This version runs in the public repository and fetches the private repository first.
+
+name: "[PROD] Deploy Cloud Functions"
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: 1.2.22
+  FIREBASE_PROJECT_ID: vimex-coursier
+  WORK_FLOW_FILE_NAME: prod-deploy-cloud-functions
+  PRIVATE_REPO_URL: git@github.com:vimex-sarl/delivery.git
+  PRIVATE_REPO_BRANCH: main
+
+jobs:
+  fetch-private-repo:
+    runs-on: ubuntu-latest
+    outputs:
+      private_repo_path: ${{ steps.set-output.outputs.private_repo_path }}
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Setup Git for private repository access
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Clone private repository
+        run: |
+          # Create SSH key for private repo access
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # Add GitHub to known hosts
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          # Clone private repository
+          git clone $PRIVATE_REPO_URL private-repo
+          cd private-repo
+          git checkout $PRIVATE_REPO_BRANCH
+
+      - name: Set output
+        id: set-output
+        run: echo "private_repo_path=$(pwd)/private-repo" >> $GITHUB_OUTPUT
+
+  changes:
+    runs-on: ubuntu-latest
+    needs: fetch-private-repo
+    outputs:
+      changeDetected: ${{ steps.filter.outputs.src == 'true' || steps.tag_check.outputs.exists == 'false' }}
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Setup Git for private repository access
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Clone private repository
+        run: |
+          # Create SSH key for private repo access
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git clone $PRIVATE_REPO_URL private-repo
+          cd private-repo
+          git checkout $PRIVATE_REPO_BRANCH
+
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          TAG_NAME="${{ env.WORK_FLOW_FILE_NAME }}"
+          if git ls-remote --tags origin "refs/tags/$TAG_NAME" | grep "$TAG_NAME" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: steps.tag_check.outputs.exists == 'true'
+        with:
+          base: ${{ env.WORK_FLOW_FILE_NAME }}
+          filters: |
+            src:
+              - '.github/workflows/prod-deploy-cloud-functions.yml'
+              - 'backends/functions/**'
+              - 'common/**'
+
+  deploy-functions:
+    runs-on: ubuntu-latest
+    needs: [changes, fetch-private-repo]
+    if: ${{ needs.changes.outputs.changeDetected }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Download private repository
+        run: |
+          # Create SSH key for private repo access
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git clone $PRIVATE_REPO_URL private-repo
+          cd private-repo
+          git checkout $PRIVATE_REPO_BRANCH
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+        working-directory: ./private-repo/backends/functions
+
+      - name: Install Firebase CLI
+        run: bun add -g firebase-tools
+        working-directory: ./private-repo/backends/functions
+
+      - name: Authenticate with Firebase
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PROD }}"
+
+      - name: Setup Google Cloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+
+      - name: Create environment file
+        run: |
+          echo "PUBLIC_WEBAPP_URL=https://admin-vimex.web.app" >> .env
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID_PROD }}" >> .env
+          echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
+          echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
+          echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
+          echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
+          echo "GOOGLE_MAPS_API_KEY_BACKEND=${{ secrets.GOOGLE_MAPS_API_KEY_BACKEND_PROD }}" >> .env
+        working-directory: ./private-repo/backends/functions
+
+      - name: Deploy Cloud Functions
+        run: |
+          firebase deploy --force --project "${{ env.FIREBASE_PROJECT_ID }}" \
+          --only functions \
+          -m "Deployment of cloud functions to prod environment from public repo" \
+          --force
+        working-directory: ./private-repo/backends/functions
+
+  update-tag:
+    needs: deploy-functions
+    if: ${{ needs.deploy-functions.result == 'success' }}
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Update tag to current commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -f "$TAG_NAME"
+          git push origin -f "$TAG_NAME"
+        env:
+          TAG_NAME: ${{ env.WORK_FLOW_FILE_NAME }}

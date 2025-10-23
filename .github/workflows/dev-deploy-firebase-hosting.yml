@@ -1,0 +1,157 @@
+# This workflow deploys the webapp to Firebase Hosting.
+# This version runs in the public repository and fetches the private repository first.
+
+name: "[DEV] Deploy Firebase Hosting"
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  PRIVATE_REPO_URL: git@github.com:vimex-sarl/delivery.git
+  PRIVATE_REPO_BRANCH: main
+
+jobs:
+  fetch-private-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Setup Git for private repository access
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Clone private repository
+        run: |
+          # Create SSH key for private repo access
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # Add GitHub to known hosts
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+          # Clone private repository
+          git clone $PRIVATE_REPO_URL private-repo
+          cd private-repo
+          git checkout $PRIVATE_REPO_BRANCH
+
+      - name: Verify private repository structure
+        run: |
+          ls -la private-repo/
+          echo "Private repository cloned successfully"
+
+      - name: Upload private repository as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: private-repo
+          path: private-repo/
+          retention-days: 1
+
+  build_and_deploy_customer:
+    name: Build and Deploy Customer
+    needs: fetch-private-repo
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Download private repository
+        uses: actions/download-artifact@v4
+        with:
+          name: private-repo
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+        working-directory: ./private-repo/frontends/customer-mobile
+
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+        working-directory: ./private-repo/frontends/customer-mobile
+
+      - name: Build customer webapp
+        run: bun run vite:build
+        working-directory: ./private-repo/frontends/customer-mobile
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_DEV }}
+          VITE_GOOGLE_MAPS_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}
+          VITE_STRIPE_CLIENT_SECRET: ${{ secrets.STRIPE_CLIENT_SECRET_DEV }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_DEV }}
+          VITE_PUBLIC_WEBAPP_URL: https://vimex-coursier-dev.web.app
+          VITE_SERVER_API_ENDPOINT: https://vimex-coursier-dev.web.app/api
+          VITE_APP_ENV: dev
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_DEV }}
+          channelId: live
+          projectId: vimex-coursier-dev
+          target: coursier
+          entryPoint: ./private-repo/frontends/customer-mobile
+
+  build_and_deploy_admin:
+    name: Build and Deploy Admin
+    needs: fetch-private-repo
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+
+      - name: Download private repository
+        uses: actions/download-artifact@v4
+        with:
+          name: private-repo
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+        working-directory: ./private-repo/frontends/admin
+
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+        working-directory: ./private-repo/frontends/admin
+
+      - name: Build admin webapp
+        run: bun run vite:build
+        working-directory: ./private-repo/frontends/admin
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_DEV }}
+          VITE_GOOGLE_MAPS_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}
+          VITE_STRIPE_CLIENT_SECRET: ${{ secrets.STRIPE_CLIENT_SECRET_DEV }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_DEV }}
+          VITE_PUBLIC_WEBAPP_URL: https://admin-vimex-dev.web.app
+          VITE_SERVER_API_ENDPOINT: https://admin-vimex-dev.web.app/api
+          VITE_APP_ENV: dev
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_DEV }}
+          channelId: live
+          projectId: vimex-coursier-dev
+          target: admin
+          entryPoint: ./private-repo/frontends/admin

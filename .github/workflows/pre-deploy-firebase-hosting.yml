@@ -1,0 +1,79 @@
+# This workflow deploys the webapp to Firebase Hosting when changes
+# to the webapp or any of the common files are pushed to the main branch.
+
+name: "[PRE] Deploy Firebase Hosting"
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy_customer:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/customer-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+      - run: bun run vite:build
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_PRE }}
+          VITE_GOOGLE_MAPS_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_PRE }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_PRE }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_PRE }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_PRE }}
+          VITE_PUBLIC_WEBAPP_URL: https://vimex-coursier-pre.web.app
+          VITE_SERVER_API_ENDPOINT: https://vimex-coursier-pre.web.app/api
+          VITE_APP_ENV: pre
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PRE }}
+          channelId: live
+          projectId: vimex-coursier-pre
+          target: coursier
+
+  build_and_deploy_admin:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontends/admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.22
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+      - run: bun run vite:build
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PRE }}
+          VITE_GOOGLE_MAPS_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_PRE }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_PRE }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_PRE }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_PRE }}
+          VITE_PUBLIC_WEBAPP_URL: https://admin-vimex-pre.web.app
+          VITE_SERVER_API_ENDPOINT: https://admin-vimex-pre.web.app/api
+          VITE_APP_ENV: pre
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PRE }}
+          channelId: live
+          projectId: vimex-coursier-pre
+          target: admin # if target is not specified, the default target or all target in .firebaserc will be deployed
