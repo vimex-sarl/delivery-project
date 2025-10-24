@@ -135,6 +135,7 @@ jobs:
         with:
           name: prod-customer-android-aab
           path: frontends/customer-mobile/build-*.aab
+          retention-days: 14
 
   build-driver-android:
     runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
@@ -228,3 +229,4 @@ jobs:
         with:
           name: prod-driver-android-aab
           path: frontends/driver-mobile/build-*.aab
+          retention-days: 14
