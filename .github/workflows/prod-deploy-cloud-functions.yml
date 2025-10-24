@@ -13,41 +13,31 @@ env:
   BUN_VERSION: 1.2.22
   FIREBASE_PROJECT_ID: vimex-coursier
   WORK_FLOW_FILE_NAME: prod-deploy-cloud-functions
-  PRIVATE_REPO_URL: git@github.com:vimex-sarl/delivery.git
   PRIVATE_REPO_BRANCH: main
+
+defaults:
+  run:
+    working-directory: ./private-repo/backends/functions
 
 jobs:
   fetch-private-repo:
     runs-on: ubuntu-latest
-    outputs:
-      private_repo_path: ${{ steps.set-output.outputs.private_repo_path }}
     steps:
       - name: Checkout public repository
         uses: actions/checkout@v4
-
-      - name: Setup Git for private repository access
+        
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: private-repo
+          ref: ${{ env.PRIVATE_REPO_BRANCH }}
+          
+      - name: Verify private repository structure
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-
-      - name: Clone private repository
-        run: |
-          # Create SSH key for private repo access
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # Add GitHub to known hosts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          # Clone private repository
-          git clone $PRIVATE_REPO_URL private-repo
-          cd private-repo
-          git checkout $PRIVATE_REPO_BRANCH
-
-      - name: Set output
-        id: set-output
-        run: echo "private_repo_path=$(pwd)/private-repo" >> $GITHUB_OUTPUT
+          ls -la private-repo/
+          echo "Private repository checked out successfully"
 
   changes:
     runs-on: ubuntu-latest
@@ -57,22 +47,14 @@ jobs:
     steps:
       - name: Checkout public repository
         uses: actions/checkout@v4
-
-      - name: Setup Git for private repository access
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-
-      - name: Clone private repository
-        run: |
-          # Create SSH key for private repo access
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git clone $PRIVATE_REPO_URL private-repo
-          cd private-repo
-          git checkout $PRIVATE_REPO_BRANCH
+        
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: private-repo
+          ref: ${{ env.PRIVATE_REPO_BRANCH }}
 
       - name: Check if tag exists
         id: tag_check
@@ -104,16 +86,13 @@ jobs:
       - name: Checkout public repository
         uses: actions/checkout@v4
 
-      - name: Download private repository
-        run: |
-          # Create SSH key for private repo access
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git clone $PRIVATE_REPO_URL private-repo
-          cd private-repo
-          git checkout $PRIVATE_REPO_BRANCH
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: private-repo
+          ref: ${{ env.PRIVATE_REPO_BRANCH }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -122,11 +101,9 @@ jobs:
 
       - name: Install dependencies
         run: bun i --frozen-lockfile
-        working-directory: ./private-repo/backends/functions
 
       - name: Install Firebase CLI
         run: bun add -g firebase-tools
-        working-directory: ./private-repo/backends/functions
 
       - name: Authenticate with Firebase
         id: auth
@@ -149,7 +126,6 @@ jobs:
           echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
           echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
           echo "GOOGLE_MAPS_API_KEY_BACKEND=${{ secrets.GOOGLE_MAPS_API_KEY_BACKEND_PROD }}" >> .env
-        working-directory: ./private-repo/backends/functions
 
       - name: Deploy Cloud Functions
         run: |
@@ -157,7 +133,6 @@ jobs:
           --only functions \
           -m "Deployment of cloud functions to prod environment from public repo" \
           --force
-        working-directory: ./private-repo/backends/functions
 
   update-tag:
     needs: deploy-functions

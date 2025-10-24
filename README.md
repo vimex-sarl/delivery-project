@@ -19,7 +19,6 @@ public-repo-setup/
 │       ├── dev-deploy-firebase-hosting.yml
 │       ├── prod-deploy-cloud-functions.yml
 │       ├── prod-deploy-firebase-hosting.yml
-│       └── template-with-private-fetch.yml
 ├── scripts/
 │   └── setup-ssh-key.sh
 ├── README.md
@@ -55,7 +54,7 @@ git push -u origin main
 In the public repository (`delivery-project`), configure the following secrets:
 
 **Required Secrets:**
-- `PRIVATE_REPO_SSH_KEY`: SSH private key with read access to the private repository
+- `PRIVATE_REPO_TOKEN`: Personal Access Token with `repo` scope for accessing the private repository
 - All existing Firebase service account keys and API keys from the private repository
 
 **Firebase Secrets (copy from private repo):**
@@ -74,24 +73,16 @@ In the public repository (`delivery-project`), configure the following secrets:
 - `STRIPE_WEBHOOK_SECRET_CONNECTED_ACCOUNT_DEV`
 - And all other API keys
 
-### 4. Generate SSH Key for Private Repository Access
+### 4. Create Personal Access Token for Private Repository Access
 
-```bash
-# Generate a new SSH key pair (do not use a passphrase)
-ssh-keygen -t ed25519 -C "github-actions@vimex-sarl" -f private-repo-key
-
-# The public key (private-repo-key.pub) needs to be added to the private repository
-# The private key (private-repo-key) should be added as PRIVATE_REPO_SSH_KEY secret
-```
-
-### 5. Add SSH Key to Private Repository
-
-1. Go to the private repository (`vimex-sarl/delivery`)
-2. Navigate to **Settings** → **Deploy Keys**
-3. Click **Add deploy key**
-4. Paste the contents of `private-repo-key.pub`
-5. Check **Allow write access** (if needed for tags)
-6. Click **Add key**
+1. Go to GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+2. Click **Generate new token** → **Generate new token (classic)**
+3. Configure the token:
+   - **Note**: `github-actions-public-repo`
+   - **Expiration**: Set an appropriate expiration (recommended: 1 year)
+   - **Scopes**: Select `repo` (full control of private repositories)
+4. Click **Generate token**
+5. Copy the generated token and add it as `PRIVATE_REPO_TOKEN` secret in the public repository
 
 ### 6. Link as Submodule in Private Repository
 

@@ -10,7 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PRIVATE_REPO_URL: git@github.com:vimex-sarl/delivery.git
   PRIVATE_REPO_BRANCH: main
 
 jobs:
@@ -19,31 +18,19 @@ jobs:
     steps:
       - name: Checkout public repository
         uses: actions/checkout@v4
-
-      - name: Setup Git for private repository access
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-
-      - name: Clone private repository
-        run: |
-          # Create SSH key for private repo access
-          mkdir -p ~/.ssh
-          echo "${{ secrets.PRIVATE_REPO_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # Add GitHub to known hosts
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-          # Clone private repository
-          git clone $PRIVATE_REPO_URL private-repo
-          cd private-repo
-          git checkout $PRIVATE_REPO_BRANCH
-
+        
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: private-repo
+          ref: ${{ env.PRIVATE_REPO_BRANCH }}
+          
       - name: Verify private repository structure
         run: |
           ls -la private-repo/
-          echo "Private repository cloned successfully"
+          echo "Private repository checked out successfully"
 
       - name: Upload private repository as artifact
         uses: actions/upload-artifact@v4
