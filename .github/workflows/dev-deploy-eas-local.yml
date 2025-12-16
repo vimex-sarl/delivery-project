@@ -15,7 +15,6 @@ on:
           - "all-ios"
       androidBuildOn:
         description: "Android build on"
-        required: true
         type: choice
         options:
           - "ubuntu-latest"
@@ -322,6 +321,10 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_SERVICES_PLIST_CUSTOMER_APP_DEV }}' > GoogleService-Info.plist
           cat GoogleService-Info.plist
+      - name: Generate google-services.json (used to extract web client id)
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}' > google-services.json
+          cat google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -427,6 +430,11 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_SERVICES_PLIST_DRIVER_APP_DEV }}' > GoogleService-Info.plist
           cat GoogleService-Info.plist
+
+      - name: Generate google-services.json (used to extract web client id)
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}' > google-services.json
+          cat google-services.json
 
       - name: Extract Web Client ID
         run: |
