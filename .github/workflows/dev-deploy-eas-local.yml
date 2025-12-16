@@ -13,16 +13,16 @@ on:
           - "customer-ios"
           - "driver-ios"
           - "all-ios"
-      runOn:
-        description: "Run on"
+      androidBuildOn:
+        description: "Android build on"
         required: true
         type: choice
         options:
-          - "tadjaur"
           - "ubuntu-latest"
+          - "tadjaur"
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.runOn }}-${{ github.event.inputs.buildApp }}"
+  group: "${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.buildApp }}"
   cancel-in-progress: true
 
 defaults:
@@ -35,7 +35,7 @@ env: # Define a shared environment variable for android and ios build.
 
 jobs:
   build-customer-android:
-    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'all-android') }}
     timeout-minutes: 60
     defaults:
@@ -65,19 +65,19 @@ jobs:
 
       # START: Comment setup on local Tadjaur deployment
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
       - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -149,7 +149,7 @@ jobs:
           build-outcome: ${{ steps.build.outcome }}
 
   build-driver-android:
-    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-android' || github.event.inputs.buildApp == 'all-android') }}
     timeout-minutes: 60
     defaults:
@@ -178,19 +178,19 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
       - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -260,7 +260,7 @@ jobs:
           build-outcome: ${{ steps.build.outcome }}
 
   build-customer-ios:
-    runs-on: ${{ github.event.inputs.runOn || 'macos-latest' }}
+    runs-on: 'macos-latest'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
     timeout-minutes: 60
     defaults:
@@ -290,23 +290,20 @@ jobs:
 
       # START: Comment setup on local Tadjaur deployment
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
-      - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
+      # - name: Setup Java
+      #   uses: actions/setup-java@v4
+      #   with:
+      #     java-version: "17"
+      #     distribution: "temurin"
 
       # END
       - run: bun i --frozen-lockfile
@@ -370,7 +367,7 @@ jobs:
           build-outcome: ${{ steps.build.outcome }}
 
   build-driver-ios:
-    runs-on: ${{ github.event.inputs.runOn || 'macos-latest' }}
+    runs-on: 'macos-latest'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-ios' || github.event.inputs.buildApp == 'all-ios') }}
     timeout-minutes: 60
     defaults:
@@ -399,23 +396,20 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
-      - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
+      # - name: Setup Java
+      #   uses: actions/setup-java@v4
+      #   with:
+      #     java-version: "17"
+      #     distribution: "temurin"
 
       - run: bun i --frozen-lockfile
 
