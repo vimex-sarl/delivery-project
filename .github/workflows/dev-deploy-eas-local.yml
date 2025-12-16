@@ -280,6 +280,7 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
+      - run: ls -la
       - name: Remove google-services.json line from .gitignore
         run: |
           sed -i '/google-services.json/d' '.gitignore'
