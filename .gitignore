@@ -38,3 +38,7 @@ Thumbs.db
 
 # Bun
 .bun
+
+# Google Service Files
+GoogleService-Info.plist
+google-services.json

@@ -280,14 +280,14 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
-      - run: ls -la
-      - name: Remove google-services.json line from .gitignore
+      - name: Remove google-services.json line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
-          sed -i '/google-services.json/d' '.gitignore'
-      - name: Remove GoogleService-Info.plist line from .gitignore
+          sed -i '' '/google-services.json/d' .gitignore
+      - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
-          sed -i '/GoogleService-Info.plist/d' '.gitignore'
+          sed -i '' '/GoogleService-Info.plist/d' .gitignore
 
+      - run: cat .gitignore
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
         uses: ./.github/actions/find-or-create-comment
@@ -395,12 +395,12 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
-      - name: Remove GoogleService-Info.plist line from .gitignore
+      - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
-          sed -i '/GoogleService-Info.plist/d' '.gitignore'
-      - name: Remove google-services.json line from .gitignore
+          sed -i '' '/GoogleService-Info.plist/d' .gitignore
+      - name: Remove google-services.json line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
-          sed -i '/google-services.json/d' '.gitignore'
+          sed -i '' '/google-services.json/d' .gitignore
 
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
