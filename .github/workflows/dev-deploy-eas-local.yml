@@ -280,6 +280,12 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
+      - name: Remove google-services.json line from .gitignore
+        run: |
+          sed -i '/google-services.json/d' '.gitignore'
+      - name: Remove GoogleService-Info.plist line from .gitignore
+        run: |
+          sed -i '/GoogleService-Info.plist/d' '.gitignore'
 
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
@@ -345,9 +351,6 @@ jobs:
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
 
-      - name: Remove GoogleService-Info.plist line from .gitignore
-        run: |
-          sed -i '/GoogleService-Info.plist/d' .gitignore
       - name: Run Local Build for iOS
         id: build
         run: |
@@ -391,6 +394,12 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: main
+      - name: Remove GoogleService-Info.plist line from .gitignore
+        run: |
+          sed -i '/GoogleService-Info.plist/d' '.gitignore'
+      - name: Remove google-services.json line from .gitignore
+        run: |
+          sed -i '/google-services.json/d' '.gitignore'
 
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
@@ -454,9 +463,6 @@ jobs:
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
 
-      - name: Remove GoogleService-Info.plist line from .gitignore
-        run: |
-          sed -i '/GoogleService-Info.plist/d' .gitignore
       - name: Run Local Build for iOS
         id: build
         run: |
