@@ -261,7 +261,7 @@ jobs:
   build-customer-ios:
     runs-on: 'macos-latest'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
-    timeout-minutes: 60
+    timeout-minutes: 220
     defaults:
       run:
         working-directory: frontends/customer-mobile
@@ -376,7 +376,7 @@ jobs:
   build-driver-ios:
     runs-on: 'macos-latest'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-ios' || github.event.inputs.buildApp == 'all-ios') }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: frontends/driver-mobile
