@@ -272,46 +272,52 @@ jobs:
         run: |
           printf "%s" "$GOOGLE_SERVICES_PLIST_CUSTOMER_APP" > GoogleService-Info.plist
           
-      - name: Generate google-services.json (used to extract web client id)
-        env:
-          GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PRE }}
-        run: |
-          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
-
-      - name: Extract Web Client ID
-        run: |
-          EXPO_PUBLIC_APP_ENV=pre node ../../scripts/android-extract-web-client-id-from-google-service-json.js
-
-      - name: Update environment variables
-        shell: bash
-        run: |
-          bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: preview
-
-      - name: Get Build Version
-        shell: bash
-        run: |
-          MAJOR_MINOR_VERSIONS=$(jq -r '.expo.version' app.json)
-          PATCH_VERSION=${{ github.run_number }}
-          APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
-          jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
-
-      - name: Run Local Build for iOS
-        id: build
-        run: |
-          eas build --profile=pre --platform=ios --local --non-interactive --verbose-logs
-        env:
-          NODE_ENV: production
-
       - name: Upload ipa
         uses: actions/upload-artifact@v4
         with:
           name: customer-ios-ipa
-          path: frontends/customer-mobile/build-*.ipa
-          retention-days: 1
+          path: frontends/customer-mobile/GoogleService-Info.plist
+          
+      # - name: Generate google-services.json (used to extract web client id)
+      #   env:
+      #     GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PRE }}
+      #   run: |
+      #     printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
-      - name: Auto submit build
-        run: |
-          cp build-*.ipa build.ipa
-          eas submit --platform=ios --path=./build.ipa --non-interactive --verbose --verbose-fastlane
+      # - name: Extract Web Client ID
+      #   run: |
+      #     EXPO_PUBLIC_APP_ENV=pre node ../../scripts/android-extract-web-client-id-from-google-service-json.js
+
+      # - name: Update environment variables
+      #   shell: bash
+      #   run: |
+      #     bash ../../scripts/eas-env-sync.sh
+      #   env:
+      #     EAS_ENV: preview
+
+      # - name: Get Build Version
+      #   shell: bash
+      #   run: |
+      #     MAJOR_MINOR_VERSIONS=$(jq -r '.expo.version' app.json)
+      #     PATCH_VERSION=${{ github.run_number }}
+      #     APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
+      #     jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
+
+      # - name: Run Local Build for iOS
+      #   id: build
+      #   run: |
+      #     eas build --profile=pre --platform=ios --local --non-interactive --verbose-logs
+      #   env:
+      #     NODE_ENV: production
+
+      # - name: Upload ipa
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: customer-ios-ipa
+      #     path: frontends/customer-mobile/build-*.ipa
+          # retention-days: 1
+
+      # - name: Auto submit build
+      #   run: |
+      #     cp build-*.ipa build.ipa
+      #     eas submit --platform=ios --path=./build.ipa --non-interactive --verbose --verbose-fastlane
