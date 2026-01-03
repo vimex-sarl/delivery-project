@@ -330,4 +330,9 @@ jobs:
           name: customer-ios-ipa
           path: frontends/customer-mobile/build-*.ipa
           retention-days: 1
+
+      - name: Auto submit build
+        run: |
+          cp build-*.ipa build.ipa
+          eas submit --platform=ios --path=./build.ipa --non-interactive --verbose --verbose-fastlane
           
