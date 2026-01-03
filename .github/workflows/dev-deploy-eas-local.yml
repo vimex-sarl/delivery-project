@@ -5,7 +5,7 @@ on:
       pRef:
         description: "P Checkout Ref"
         required: true
-        type: text
+        type: string
         default: main
       buildApp:
         description: "Build app"
@@ -102,7 +102,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -215,7 +215,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -333,7 +333,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
