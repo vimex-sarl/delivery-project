@@ -311,12 +311,10 @@ jobs:
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
 
-      - name: Remove google-services.json line from .gitignore
+      - name: Update eas.json
         run: |
-          sed -i '/google-services.json/d' .gitignore
-      # - name: Update eas.json
-      #   run: |
-      #     jq --arg androidBuildType "${{ inputs.androidBuildType }}" '.build.prod.android.buildType = $androidBuildType' eas.json > eas.json.temp && mv eas.json.temp eas.json
+          jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.prod.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
+
       - name: Run Cloud Build for iOS
         id: build
         run: |
