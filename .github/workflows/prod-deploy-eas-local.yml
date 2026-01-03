@@ -2,21 +2,11 @@ name: "[PROD] Deploy EAS local"
 on:
   workflow_dispatch:
     inputs:
-      build_type:
-        description: "Build type"
+      pRef:
+        description: "P Checkout Ref"
         required: true
-        default: "app-bundle"
-        type: choice
-        options:
-          - apk
-          - app-bundle
-      runOn:
-        description: "Run on"
-        required: true
-        type: choice
-        options:
-          - "tadjaur"
-          - "ubuntu-latest"
+        type: string
+        default: main
       buildApp:
         description: "Build app"
         required: true
@@ -25,9 +15,23 @@ on:
           - "customer-android"
           - "driver-android"
           - "all-android"
+          - "customer-ios"
+      androidBuildOn:
+        description: "Android build on"
+        type: choice
+        options:
+          - "ubuntu-latest"
+          - "tadjaur"
+      androidBuildType:
+        description: "Build type"
+        default: "app-bundle"
+        type: choice
+        options:
+          - apk
+          - app-bundle
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.ref }}"
+  group: "${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.buildApp }}"
   cancel-in-progress: true
 
 defaults:
@@ -40,37 +44,35 @@ env: # Define a shared environment variable for android and ios build.
 
 jobs:
   build-customer-android:
-    timeout-minutes: 60
-    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'all-android') }}
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: frontends/customer-mobile
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Find or create comment for build status
-        if: github.event_name == 'pull_request'
-        uses: ./.github/actions/find-or-create-comment
+        uses: actions/checkout@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef }}
 
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -89,9 +91,10 @@ jobs:
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=prod" >> .env
       - name: Generate google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PROD }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PROD }}' > google-services.json
-          cat google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -117,7 +120,7 @@ jobs:
           sed -i '/google-services.json/d' .gitignore
       - name: Update eas.json
         run: |
-          jq --arg build_type "${{ inputs.build_type }}" '.build.prod.android.buildType = $build_type' eas.json > eas.json.temp && mv eas.json.temp eas.json
+          jq --arg androidBuildType "${{ inputs.androidBuildType }}" '.build.prod.android.buildType = $androidBuildType' eas.json > eas.json.temp && mv eas.json.temp eas.json
       - name: Run Cloud Build for Android
         id: build
         run: |
@@ -138,35 +141,35 @@ jobs:
           retention-days: 1
 
   build-driver-android:
-    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-android' || github.event.inputs.buildApp == 'all-android') }}
     timeout-minutes: 60
     defaults:
       run:
         working-directory: frontends/driver-mobile
 
-    env:
-      build-name: "[PROD] Driver Android APK"
-      comment-unique-magic-prefix: "<!-- prod_driver_android_build_status -->"
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef }}
 
       - name: Setup Bun
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
-        if: ${{ github.event.inputs.runOn != 'tadjaur' }}
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
           java-version: "17"
@@ -184,9 +187,10 @@ jobs:
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=prod" >> .env
       - name: Generate google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_DRIVER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_DRIVER_APP_PROD }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_DRIVER_APP_PROD }}' > google-services.json
-          cat google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_DRIVER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -211,7 +215,7 @@ jobs:
           sed -i '/google-services.json/d' .gitignore
       - name: Update eas.json
         run: |
-          jq --arg build_type "${{ inputs.build_type }}" '.build.prod.android.buildType = $build_type' eas.json > eas.json.temp && mv eas.json.temp eas.json
+          jq --arg androidBuildType "${{ inputs.androidBuildType }}" '.build.prod.android.buildType = $androidBuildType' eas.json > eas.json.temp && mv eas.json.temp eas.json
       - name: Run Cloud Build for Android
         id: build
         run: |
@@ -230,3 +234,100 @@ jobs:
           name: prod-driver-android-aab
           path: frontends/driver-mobile/build-*.aab
           retention-days: 1
+
+  build-customer-ios:
+    runs-on: 'macos-latest'
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: frontends/customer-mobile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef }}
+
+      - name: Remove google-services.json line from .gitignore # WARN: macos-latest use BSD sed and need ''
+        run: |
+          sed -i '' '/google-services.json/d' .gitignore
+      - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
+        run: |
+          sed -i '' '/GoogleService-Info.plist/d' .gitignore
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN_PROD }}
+
+      - run: bun i --frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_ANDROID_GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://vimex-coursier.web.app" >> .env
+          echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier.web.app/api" >> .env
+          echo "EXPO_PUBLIC_APP_ENV=prod" >> .env
+      - name: Create Info.plist from Secret
+        env:
+          GOOGLE_SERVICES_PLIST_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_PLIST_CUSTOMER_APP_PROD }}
+        run: |
+          printf "%s" "$GOOGLE_SERVICES_PLIST_CUSTOMER_APP" > GoogleService-Info.plist
+          
+      - name: Generate google-services.json (used to extract web client id)
+        env:
+          GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PROD }}
+        run: |
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+
+      - name: Extract Web Client ID
+        run: |
+          EXPO_PUBLIC_APP_ENV=prod node ../../scripts/android-extract-web-client-id-from-google-service-json.js
+
+      - name: Update environment variables
+        shell: bash
+        run: |
+          bash ../../scripts/eas-env-sync.sh
+        env:
+          EAS_ENV: production
+
+      - name: Get Build Version
+        shell: bash
+        run: |
+          MAJOR_MINOR_VERSIONS=$(jq -r '.expo.version' app.json)
+          PATCH_VERSION=${{ github.run_number }}
+          APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
+          jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
+
+      - name: Remove google-services.json line from .gitignore
+        run: |
+          sed -i '/google-services.json/d' .gitignore
+      # - name: Update eas.json
+      #   run: |
+      #     jq --arg androidBuildType "${{ inputs.androidBuildType }}" '.build.prod.android.buildType = $androidBuildType' eas.json > eas.json.temp && mv eas.json.temp eas.json
+      - name: Run Cloud Build for iOS
+        id: build
+        run: |
+          eas build --profile=prod --platform=ios --local --non-interactive --verbose-logs
+        env:
+          NODE_ENV: production
+
+      - name: Upload ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-ios-ipa
+          path: frontends/customer-mobile/build-*.ipa
+          retention-days: 1
+          
