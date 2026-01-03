@@ -2,6 +2,11 @@ name: "[DEV] Deploy EAS Local"
 on:
   workflow_dispatch:
     inputs:
+      pRef:
+        description: "P Checkout Ref"
+        required: true
+        type: text
+        default: main
       buildApp:
         description: "Build app"
         required: true
@@ -52,7 +57,7 @@ jobs:
         with:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          ref: main
+          ref: ${{ github.event.inputs.pRef }}
 
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
@@ -94,9 +99,10 @@ jobs:
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier-dev.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=dev" >> .env
       - name: Generate google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}' > google-services.json
-          cat google-services.json
+          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -156,7 +162,7 @@ jobs:
     # will be used in find_or_create_comment
     # and update_native_build_preview action
     env:
-      build-name: Customer Android APK
+      build-name: Driver Android APK
       comment-unique-magic-prefix: "<!-- driver_android_build_status -->"
       # comment-unique-magic-prefix: "<!-- driver_android_tadjaur_build_status -->"
 
@@ -166,7 +172,7 @@ jobs:
         with:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          ref: main
+          ref: ${{ github.event.inputs.pRef }}
 
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
@@ -206,9 +212,10 @@ jobs:
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier-dev.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=dev" >> .env
       - name: Generate google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}' > google-services.json
-          cat google-services.json
+          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -277,7 +284,7 @@ jobs:
         with:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          ref: main
+          ref: ${{ github.event.inputs.pRef }}
       - name: Remove google-services.json line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
           sed -i '' '/google-services.json/d' .gitignore
@@ -285,7 +292,6 @@ jobs:
         run: |
           sed -i '' '/GoogleService-Info.plist/d' .gitignore
 
-      - run: cat .gitignore
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
         uses: ./.github/actions/find-or-create-comment
@@ -302,12 +308,6 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_DEV }}
-
-      # - name: Setup Java
-      #   uses: actions/setup-java@v4
-      #   with:
-      #     java-version: "17"
-      #     distribution: "temurin"
 
       # END
       - run: bun i --frozen-lockfile
@@ -333,7 +333,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
