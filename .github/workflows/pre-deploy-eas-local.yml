@@ -5,7 +5,7 @@ on:
       pRef:
         description: "P Checkout Ref"
         required: true
-        type: text
+        type: string
         default: main
       buildApp:
         description: "Build app"
@@ -99,7 +99,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PRE }}
         run: |
-          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
 
       - name: Extract Web Client ID
@@ -160,7 +160,7 @@ jobs:
     # will be used in find_or_create_comment
     # and update_native_build_preview action
     env:
-      build-name: Driver Android APK
+      build-name: "[PRE] Driver Android APK"
       comment-unique-magic-prefix: "<!-- driver_android_build_status -->"
 
     steps:
@@ -209,9 +209,10 @@ jobs:
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier-pre.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=pre" >> .env
       - name: Generate google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_DRIVER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_DRIVER_APP_PRE }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_DRIVER_APP_PRE }}' > google-services.json
-          cat google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_DRIVER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
@@ -303,7 +304,6 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_PRE }}
 
-
       - run: bun i --frozen-lockfile
 
       - name: Create .env file
@@ -326,7 +326,7 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_PRE }}
         run: |
-          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
+          printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
 
       - name: Extract Web Client ID
         run: |
