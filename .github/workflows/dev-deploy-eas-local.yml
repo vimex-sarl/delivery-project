@@ -324,14 +324,18 @@ jobs:
           echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://vimex-coursier-dev.web.app" >> .env
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier-dev.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=dev" >> .env
-      - name: Generate Google Services PLIST
+
+      - name: Create Info.plist from Secret
+        env:
+          GOOGLE_SERVICES_PLIST_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_PLIST_CUSTOMER_APP_DEV }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_PLIST_CUSTOMER_APP_DEV }}' > GoogleService-Info.plist
-          cat GoogleService-Info.plist
+          printf "%s" "$GOOGLE_SERVICES_PLIST_CUSTOMER_APP" > GoogleService-Info.plist
+          
       - name: Generate google-services.json (used to extract web client id)
+        env:
+          GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
-          echo '${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}' > google-services.json
-          cat google-services.json
+          printf "%s" "GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV" > google-services.json
 
       # - name: Extract Web Client ID
       #   run: |
@@ -358,7 +362,13 @@ jobs:
       #     eas build --profile=dev --platform=ios --local --non-interactive --verbose-logs
       #   env:
       #     NODE_ENV: production
-
+      - name: Upload Google service for debuging
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-services.json
+          path: frontends/customer-mobile/google-services.json
+          retention-days: 1
+          
       - name: Upload Google service for debuging
         uses: actions/upload-artifact@v4
         with:
