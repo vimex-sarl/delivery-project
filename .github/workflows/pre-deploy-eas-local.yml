@@ -44,12 +44,6 @@ jobs:
       run:
         working-directory: frontends/customer-mobile
 
-    # will be used in find_or_create_comment
-    # and update_native_build_preview action
-    env:
-      build-name: Android APK
-      comment-unique-magic-prefix: "<!-- customer_android_build_status -->"
-      # comment-unique-magic-prefix: "<!-- customer_android_tadjaur_build_status -->"
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -57,12 +51,6 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: ${{ github.event.inputs.pRef }}
-
-      - name: Find or create comment for build status
-        if: github.event_name == 'pull_request'
-        uses: ./.github/actions/find-or-create-comment
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
@@ -142,13 +130,6 @@ jobs:
           path: frontends/customer-mobile/build-*.apk
           retention-days: 1
 
-      - name: Update build status
-        if: always() && github.event_name == 'pull_request'
-        uses: ./.github/actions/update-native-build-status
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          build-outcome: ${{ steps.build.outcome }}
-
   build-driver-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-android' || github.event.inputs.buildApp == 'all-android') }}
@@ -157,12 +138,6 @@ jobs:
       run:
         working-directory: frontends/driver-mobile
 
-    # will be used in find_or_create_comment
-    # and update_native_build_preview action
-    env:
-      build-name: "[PRE] Driver Android APK"
-      comment-unique-magic-prefix: "<!-- driver_android_build_status -->"
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -170,12 +145,6 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: ${{ github.event.inputs.pRef }}
-
-      - name: Find or create comment for build status
-        if: github.event_name == 'pull_request'
-        uses: ./.github/actions/find-or-create-comment
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
@@ -252,12 +221,6 @@ jobs:
           name: driver-android-apk
           path: frontends/driver-mobile/build-*.apk
 
-      - name: Update build status
-        if: always() && github.event_name == 'pull_request'
-        uses: ./.github/actions/update-native-build-status
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          build-outcome: ${{ steps.build.outcome }}
 
   build-customer-ios:
     runs-on: 'macos-latest'
@@ -266,13 +229,6 @@ jobs:
     defaults:
       run:
         working-directory: frontends/customer-mobile
-
-    # will be used in find_or_create_comment
-    # and update_native_build_preview action
-    env:
-      build-name: iOS Build
-      comment-unique-magic-prefix: "<!-- customer_ios_build_status -->"
-      # comment-unique-magic-prefix: "<!-- customer_ios_tadjaur_build_status -->"
 
     steps:
       - name: Checkout code
@@ -287,12 +243,6 @@ jobs:
       - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
           sed -i '' '/GoogleService-Info.plist/d' .gitignore
-
-      - name: Find or create comment for build status
-        if: github.event_name == 'pull_request'
-        uses: ./.github/actions/find-or-create-comment
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -361,9 +311,7 @@ jobs:
           path: frontends/customer-mobile/build-*.ipa
           retention-days: 1
 
-      - name: Update build status
-        if: always() && github.event_name == 'pull_request'
-        uses: ./.github/actions/update-native-build-status
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          build-outcome: ${{ steps.build.outcome }}
+      - name: Auto submit build
+        run: |
+          cp build-*.ipa build.ipa
+          eas submit --platform=ios --path=./build.ipa --non-interactive --verbose --verbose-fastlane
