@@ -328,6 +328,7 @@ jobs:
       - name: Update eas.json
         run: |
           jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.prod.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
+          cat eas.json
 
       - name: Auto submit build
         run: |
