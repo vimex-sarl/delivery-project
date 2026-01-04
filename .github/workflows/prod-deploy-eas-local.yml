@@ -311,10 +311,6 @@ jobs:
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
 
-      - name: Update eas.json
-        run: |
-          jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.prod.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
-
       - name: Run Cloud Build for iOS
         id: build
         run: |
@@ -328,6 +324,10 @@ jobs:
           name: customer-ios-ipa
           path: frontends/customer-mobile/build-*.ipa
           retention-days: 1
+
+      - name: Update eas.json
+        run: |
+          jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.prod.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
 
       - name: Auto submit build
         run: |
