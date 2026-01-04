@@ -275,7 +275,7 @@ jobs:
           echo "NODE_ENV=production" > .env
           echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PROD }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}" >> .env
-          echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_ANDROID_GOOGLE_MAPS_API_KEY_PROD }}" >> .env
+          echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_IOS_GOOGLE_MAPS_API_KEY_PROD }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}" >> .env
           echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://vimex-coursier.web.app" >> .env
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier.web.app/api" >> .env
