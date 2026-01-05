@@ -328,11 +328,9 @@ jobs:
       - name: Update eas.json
         run: |
           jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.prod.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
-          jq --arg ascAppId "${{ secrets.ASC_APP_ID_PROD }}" '.submit.production.ios.ascAppId = $ascAppId' eas.json > eas.json.temp && mv eas.json.temp eas.json
-          cat eas.json
 
       - name: Auto submit build
         run: |
           cp build-*.ipa build.ipa
-          eas submit --platform=ios --path=./build.ipa --non-interactive --verbose --verbose-fastlane
+          eas submit --platform=ios --profile=prod --path=./build.ipa --non-interactive --verbose --verbose-fastlane
           
