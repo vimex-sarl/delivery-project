@@ -333,4 +333,6 @@ jobs:
         run: |
           cp build-*.ipa build.ipa
           eas submit --platform=ios --profile=prod --path=./build.ipa --non-interactive --verbose --verbose-fastlane
-          
+        env:
+          EXPO_PUBLIC_APP_ENV: prod
+  
