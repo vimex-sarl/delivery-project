@@ -29,7 +29,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: frontends/customer-mobile
+    working-directory: apps/customer
 
 env: # Define a shared environment variable for android and ios build.
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_DEV }}
@@ -42,7 +42,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        working-directory: frontends/customer-mobile
+        working-directory: apps/customer
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -141,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: customer-android-apk
-          path: frontends/customer-mobile/build-*.apk
+          path: apps/customer/build-*.apk
           retention-days: 1
 
       - name: Update build status
@@ -157,7 +157,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        working-directory: frontends/driver-mobile
+        working-directory: apps/driver
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -253,7 +253,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: driver-android-apk
-          path: frontends/driver-mobile/build-*.apk
+          path: apps/driver/build-*.apk
           retention-days: 1
 
       - name: Update build status
@@ -269,7 +269,7 @@ jobs:
     timeout-minutes: 90
     defaults:
       run:
-        working-directory: frontends/customer-mobile
+        working-directory: apps/customer
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -365,7 +365,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: customer-ios-ipa
-          path: frontends/customer-mobile/build-*.ipa
+          path: apps/customer/build-*.ipa
           retention-days: 1
 
       - name: Update build status
