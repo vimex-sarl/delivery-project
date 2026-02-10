@@ -8,7 +8,7 @@ concurrency:
 
 defaults:
   run:
-    working-directory: frontends/customer-mobile
+    working-directory: apps/customer
 
 env: # Define a shared environment variable for android and ios build.
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 10
     defaults:
       run:
-        working-directory: frontends/customer-mobile
+        working-directory: apps/customer
 
     steps:
       - name: Checkout code
