@@ -133,11 +133,11 @@ jobs:
           cp build-*.apk ../../../../latest-prod-customer-build.apk || true
           cp build-*.aab ../../../../latest-prod-customer-build.aab || true
 
-      - name: Upload AAB
+      - name: "Upload ${{ inputs.androidBuildType == 'apk' && 'APK' || 'AAB' }}"
         uses: actions/upload-artifact@v4
         with:
-          name: prod-customer-android-aab
-          path: apps/customer/build-*.aab
+          name: "prod-customer-android-${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
+          path: "apps/customer/build-*.${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
           retention-days: 1
 
   build-driver-android:
@@ -228,11 +228,11 @@ jobs:
           cp build-*.apk ../../../../latest-prod-driver-build.apk || true
           cp build-*.aab ../../../../latest-prod-driver-build.aab || true
 
-      - name: Upload AAB
+      - name: "Upload ${{ inputs.androidBuildType == 'apk' && 'APK' || 'AAB' }}"
         uses: actions/upload-artifact@v4
         with:
-          name: prod-driver-android-aab
-          path: apps/driver/build-*.aab
+          name: "prod-driver-android-${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
+          path: "apps/driver/build-*.${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
           retention-days: 1
 
   build-customer-ios:
