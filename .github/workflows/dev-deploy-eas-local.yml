@@ -75,7 +75,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
       - name: Setup Java
@@ -91,6 +91,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_ANDROID_GOOGLE_MAPS_API_KEY_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}" >> .env
@@ -102,11 +103,9 @@ jobs:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
           printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
-
       - name: Extract Web Client ID
         run: |
           EXPO_PUBLIC_APP_ENV=dev node ../../scripts/android-extract-web-client-id-from-google-service-json.js
-
       - name: Update environment variables
         shell: bash
         run: |
@@ -121,7 +120,6 @@ jobs:
           PATCH_VERSION=${{ github.run_number }}
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
-
       - name: Remove google-services.json line from .gitignore
         run: |
           sed -i '/google-services.json/d' .gitignore
@@ -135,7 +133,6 @@ jobs:
       - name: Save apk
         run: |
           cp build-*.apk ../../../../latest-dev-customer-build.apk
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -188,7 +185,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
       - name: Setup Java
@@ -203,6 +200,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.DRIVER_ANDROID_GOOGLE_MAPS_API_KEY_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}" >> .env
@@ -214,11 +212,9 @@ jobs:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
           printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
-
       - name: Extract Web Client ID
         run: |
           EXPO_PUBLIC_APP_ENV=dev node ../../scripts/android-extract-web-client-id-from-google-service-json.js
-
       - name: Update environment variables
         shell: bash
         run: |
@@ -232,7 +228,6 @@ jobs:
           PATCH_VERSION=${{ github.run_number }}
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
-
       - name: Remove google-services.json line from .gitignore
         run: |
           sed -i '/google-services.json/d' .gitignore
@@ -246,7 +241,6 @@ jobs:
       - name: Save apk
         run: |
           cp build-*.apk ../../../../latest-dev-driver-build.apk
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -289,7 +283,6 @@ jobs:
       - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
         run: |
           sed -i '' '/GoogleService-Info.plist/d' .gitignore
-
       - name: Find or create comment for build status
         if: github.event_name == 'pull_request'
         uses: ./.github/actions/find-or-create-comment
@@ -304,7 +297,7 @@ jobs:
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_DEV }}
 
       # END
@@ -313,13 +306,13 @@ jobs:
       - name: Create .env file
         run: |
           echo "NODE_ENV=production" > .env
+          echo "EXPO_PUBLIC_FIREBASE_CONFIG_JSON=${{ secrets.FIREBASE_CONFIG_JSON_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_STYLE_ID=${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=${{ secrets.CUSTOMER_IOS_GOOGLE_MAPS_API_KEY_DEV }}" >> .env
           echo "EXPO_PUBLIC_GOOGLE_PLACE_API_KEY=${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}" >> .env
           echo "EXPO_PUBLIC_PUBLIC_WEBAPP_URL=https://vimex-coursier-dev.web.app" >> .env
           echo "EXPO_PUBLIC_SERVER_API_ENDPOINT=https://vimex-coursier-dev.web.app/api" >> .env
           echo "EXPO_PUBLIC_APP_ENV=dev" >> .env
-
       - name: Create Info.plist from Secret
         env:
           GOOGLE_SERVICES_PLIST_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_PLIST_CUSTOMER_APP_DEV }}
@@ -331,11 +324,9 @@ jobs:
           GOOGLE_SERVICES_JSON_CUSTOMER_APP: ${{ secrets.GOOGLE_SERVICES_JSON_CUSTOMER_APP_DEV }}
         run: |
           printf "%s" "$GOOGLE_SERVICES_JSON_CUSTOMER_APP" > google-services.json
-
       - name: Extract Web Client ID
         run: |
           EXPO_PUBLIC_APP_ENV=dev node ../../scripts/android-extract-web-client-id-from-google-service-json.js
-
       - name: Update environment variables
         shell: bash
         run: |
@@ -350,7 +341,6 @@ jobs:
           PATCH_VERSION=${{ github.run_number }}
           APP_VERSION="${MAJOR_MINOR_VERSIONS%.*}.$PATCH_VERSION"
           jq --arg version "$APP_VERSION" '.expo.version = $version' app.json > app.json.temp && mv app.json.temp app.json
-
       - name: Run Local Build for iOS
         id: build
         run: |
