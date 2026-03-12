@@ -68,7 +68,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
@@ -121,7 +121,7 @@ jobs:
       - name: Update eas.json
         run: |
           jq --arg androidBuildType "${{ inputs.androidBuildType }}" '.build.prod.android.buildType = $androidBuildType' eas.json > eas.json.temp && mv eas.json.temp eas.json
-      - name: Run Cloud Build for Android
+      - name: Run Local Build for Android
         id: build
         run: |
           eas build --profile=prod --platform=android --local --non-interactive --verbose-logs
@@ -165,7 +165,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
