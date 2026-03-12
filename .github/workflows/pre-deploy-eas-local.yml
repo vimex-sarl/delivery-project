@@ -61,7 +61,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_PRE }}
 
       - name: Setup Java
@@ -155,7 +155,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_PRE }}
 
       - name: Setup Java
