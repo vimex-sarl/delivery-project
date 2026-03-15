@@ -265,7 +265,7 @@ jobs:
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
+          eas-version: 18.0.3
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - run: bun i --frozen-lockfile
