@@ -140,6 +140,14 @@ jobs:
           path: "apps/customer/build-*.${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
           retention-days: 1
 
+      - name: Auto submit build
+        if: inputs.androidBuildType == 'aab'
+        run: |
+          cp build-*.aab build.aab
+          eas submit --platform=android --profile=prod --path=./build.aab --non-interactive --verbose --verbose-fastlane
+        env:
+          EXPO_PUBLIC_APP_ENV: prod
+
   build-driver-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-android' || github.event.inputs.buildApp == 'all-android') }}
@@ -235,6 +243,14 @@ jobs:
           path: "apps/driver/build-*.${{ inputs.androidBuildType == 'apk' && 'apk' || 'aab' }}"
           retention-days: 1
 
+      - name: Auto submit build
+        if: inputs.androidBuildType == 'aab'
+        run: |
+          cp build-*.aab build.aab
+          eas submit --platform=android --profile=prod --path=./build.aab --non-interactive --verbose --verbose-fastlane
+        env:
+          EXPO_PUBLIC_APP_ENV: prod
+          
   build-customer-ios:
     runs-on: 'macos-latest'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
