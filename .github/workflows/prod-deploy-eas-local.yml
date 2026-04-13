@@ -12,10 +12,10 @@ on:
         required: true
         type: choice
         options:
+          - "customer-ios"
           - "customer-android"
           - "driver-android"
           - "all-android"
-          - "customer-ios"
       androidBuildOn:
         description: "Android build on"
         type: choice
