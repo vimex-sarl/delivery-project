@@ -75,7 +75,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
+          java-version: "21"
           distribution: "temurin"
 
       - run: bun i --frozen-lockfile
@@ -181,7 +181,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
+          java-version: "21"
           distribution: "temurin"
       - run: bun i --frozen-lockfile
 
