@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: 1.2.22
+  BUN_VERSION: 1.3.13
   FIREBASE_PROJECT_ID: vimex-coursier
   WORK_FLOW_FILE_NAME: prod-deploy-cloud-functions
 

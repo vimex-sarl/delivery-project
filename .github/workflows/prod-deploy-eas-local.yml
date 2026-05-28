@@ -40,7 +40,7 @@ defaults:
 
 env: # Define a shared environment variable for android and ios build.
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_PROD }}
-  BUN_VERSION: 1.2.22
+  BUN_VERSION: 1.3.13
 
 jobs:
   build-customer-android:
