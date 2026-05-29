@@ -225,7 +225,7 @@ jobs:
 
 
   build-customer-ios:
-    runs-on: 'macos-latest'
+    runs-on: 'macos-26'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
     timeout-minutes: 90
     defaults:
@@ -239,10 +239,10 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: ${{ github.event.inputs.pRef }}
-      - name: Remove google-services.json line from .gitignore # WARN: macos-latest use BSD sed and need ''
+      - name: Remove google-services.json line from .gitignore # WARN: macos-26 use BSD sed and need ''
         run: |
           sed -i '' '/google-services.json/d' .gitignore
-      - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-latest use BSD sed and need ''
+      - name: Remove GoogleService-Info.plist line from .gitignore # WARN: macos-26 use BSD sed and need ''
         run: |
           sed -i '' '/GoogleService-Info.plist/d' .gitignore
 
