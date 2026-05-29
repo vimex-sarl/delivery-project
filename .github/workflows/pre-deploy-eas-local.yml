@@ -39,7 +39,7 @@ jobs:
   build-customer-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'all-android') }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: apps/customer
@@ -134,7 +134,7 @@ jobs:
   build-driver-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'driver-android' || github.event.inputs.buildApp == 'all-android') }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: apps/driver
