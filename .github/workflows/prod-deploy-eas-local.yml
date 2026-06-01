@@ -254,7 +254,7 @@ jobs:
           EXPO_PUBLIC_APP_ENV: prod
           
   build-customer-ios:
-    runs-on: 'macos-26'
+    runs-on: 'macos-26-intel'
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
     timeout-minutes: 90
     defaults:
