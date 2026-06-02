@@ -79,7 +79,22 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
+      - name: Restore Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/**/*.gradle*', 'apps/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+          save-always: true
 
+      - name: Setup Android SDK
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "ndk;27.1.12297006 cmake;3.22.1"
       - run: bun i --frozen-lockfile
 
       - name: Create .env file
@@ -128,6 +143,9 @@ jobs:
           eas build --profile=prod --platform=android --local --non-interactive --verbose-logs
         env:
           NODE_ENV: production
+      - name: Stop any Gradle daemons
+        if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
+        run: pkill -f 'GradleDaemon' || true
 
       - name: Save apk
         run: |
