@@ -75,9 +75,7 @@ jobs:
       - name: Update environment variables
         shell: bash
         run: |
-          bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: preview
+          eas env:push --environment="preview" --path=.env --force
 
       - name: Get Build Version
         shell: bash
@@ -150,9 +148,8 @@ jobs:
 
       - name: Update environment variables
         shell: bash
-        run: bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: preview
+        run: |
+          eas env:push --environment="preview" --path=.env --force
 
       - name: Get Build Version
         shell: bash

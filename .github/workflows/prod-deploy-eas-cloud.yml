@@ -21,6 +21,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/customer
+        shell: bash
 
     steps:
       - name: Checkout code
@@ -75,7 +76,7 @@ jobs:
       - name: Update environment variables
         shell: bash
         run: |
-          bash ../../scripts/eas-env-sync.sh
+          eas env:push --environment="$EAS_ENV" --path=.env --force
         env:
           EAS_ENV: production
 
@@ -103,6 +104,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/driver
+        shell: bash
 
     steps:
       - name: Checkout code
@@ -150,7 +152,7 @@ jobs:
 
       - name: Update environment variables
         shell: bash
-        run: bash ../../scripts/eas-env-sync.sh
+        run: eas env:push --environment="$EAS_ENV" --path=.env --force
         env:
           EAS_ENV: production
 

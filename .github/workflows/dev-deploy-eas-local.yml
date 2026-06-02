@@ -30,6 +30,7 @@ concurrency:
 defaults:
   run:
     working-directory: apps/customer
+    shell: bash
 
 env: # Define a shared environment variable for android and ios build.
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_DEV }}
@@ -43,6 +44,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/customer
+        shell: bash
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -110,9 +112,7 @@ jobs:
       - name: Update environment variables
         shell: bash
         run: |
-          bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: development
+          eas env:push --environment="development" --path=.env --force
 
       - name: Get Build Version
         shell: bash
@@ -155,6 +155,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/driver
+        shell: bash
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -220,9 +221,7 @@ jobs:
       - name: Update environment variables
         shell: bash
         run: |
-          bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: development
+          eas env:push --environment="development" --path=.env --force
       - name: Get Build Version
         shell: bash
         run: |
@@ -264,6 +263,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/customer
+        shell: bash
 
     # will be used in find_or_create_comment
     # and update_native_build_preview action
@@ -333,9 +333,7 @@ jobs:
       - name: Update environment variables
         shell: bash
         run: |
-          bash ../../scripts/eas-env-sync.sh
-        env:
-          EAS_ENV: development
+          eas env:push --environment="development" --path=.env --force
 
       - name: Get Build Version
         shell: bash

@@ -37,6 +37,7 @@ concurrency:
 defaults:
   run:
     working-directory: apps/customer
+    shell: bash
 
 env: # Define a shared environment variable for android and ios build.
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -50,6 +51,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/customer
+        shell: bash
 
     steps:
       - name: Checkout code
@@ -154,6 +156,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/driver
+        shell: bash
 
     steps:
       - name: Checkout code
@@ -257,6 +260,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/customer
+        shell: bash
 
     steps:
       - name: Checkout code
