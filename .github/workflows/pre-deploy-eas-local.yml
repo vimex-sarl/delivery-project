@@ -40,7 +40,6 @@ jobs:
   build-customer-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'all-android') }}
-    timeout-minutes: 90
     defaults:
       run:
         working-directory: apps/customer
