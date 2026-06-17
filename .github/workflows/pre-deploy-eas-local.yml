@@ -55,7 +55,7 @@ jobs:
 
       - name: Setup Bun
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
@@ -71,17 +71,8 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
-
-      - name: Restore Gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('apps/**/*.gradle*', 'apps/**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-          save-always: true
+          check-latest: true
+          cache: "gradle"
 
       - name: Setup Android SDK
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
@@ -168,7 +159,7 @@ jobs:
 
       - name: Setup Bun
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
@@ -184,6 +175,8 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
+          check-latest: true
+          cache: "gradle"
 
       - run: bun i --frozen-lockfile
 
@@ -267,7 +260,7 @@ jobs:
           sed -i '' '/GoogleService-Info.plist/d' .gitignore
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS

@@ -28,7 +28,7 @@ jobs:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
           ref: ${{ github.event.inputs.pRef }}
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
@@ -39,11 +39,11 @@ jobs:
 
       # Setup credentials for Firebase and Google Cloud tools.
       - id: "auth"
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@v3"
         with:
           credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PRE }}"
 
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
         with:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
 
