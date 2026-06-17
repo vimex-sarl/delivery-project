@@ -45,7 +45,7 @@ jobs:
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
-          eas-version: 20.0.0
+          eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
@@ -122,7 +122,7 @@ jobs:
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
-          eas-version: 20.0.0
+          eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
 
       - name: Setup Java
