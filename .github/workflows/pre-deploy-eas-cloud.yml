@@ -42,7 +42,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun i --frozen-lockfile
       - name: Setup EAS
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9.0.0
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_PRE }}
@@ -118,7 +118,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun i --frozen-lockfile
       - name: Setup EAS
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9.0.0
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN_PRE }}

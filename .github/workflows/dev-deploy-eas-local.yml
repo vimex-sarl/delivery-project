@@ -75,7 +75,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_DEV }}
@@ -91,7 +91,7 @@ jobs:
       
       - name: Setup Android SDK
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4.0.1
         with:
           packages: "ndk;27.1.12297006 cmake;3.22.1"
       # END
@@ -142,7 +142,7 @@ jobs:
         run: |
           cp build-*.apk ../../../../latest-dev-customer-build.apk
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: customer-android-apk
           path: apps/customer/build-*.apk
@@ -192,7 +192,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_DEV }}
@@ -252,7 +252,7 @@ jobs:
         run: |
           cp build-*.apk ../../../../latest-dev-driver-build.apk
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: driver-android-apk
           path: apps/driver/build-*.apk
@@ -306,7 +306,7 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_DEV }}
@@ -359,7 +359,7 @@ jobs:
           NODE_ENV: production
 
       - name: Upload ipa
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: customer-ios-ipa
           path: apps/customer/build-*.ipa
