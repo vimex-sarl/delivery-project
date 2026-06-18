@@ -84,7 +84,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v5.3.0
         with:
-          java-version: "21"
+          java-version: "17"
           distribution: "temurin"
           check-latest: true
       
@@ -200,7 +200,7 @@ jobs:
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: actions/setup-java@v5.3.0
         with:
-          java-version: "21"
+          java-version: "17"
           distribution: "temurin"
           check-latest: true
 
