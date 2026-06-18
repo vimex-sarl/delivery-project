@@ -68,7 +68,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: expo/expo-github-action@v9.0.0
+        uses: expo/expo-github-action@9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -80,7 +80,6 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
-          cache: "gradle"
       - name: Setup Android SDK
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
         uses: android-actions/setup-android@v4.0.1
@@ -182,7 +181,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: expo/expo-github-action@v9.0.0
+        uses: expo/expo-github-action@9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -194,7 +193,6 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
-          cache: "gradle"
       - run: bun i --frozen-lockfile
 
       - name: Create .env file
@@ -293,7 +291,7 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - name: Setup EAS
-        uses: expo/expo-github-action@v9.0.0
+        uses: expo/expo-github-action@9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}

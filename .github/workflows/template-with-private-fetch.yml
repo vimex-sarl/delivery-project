@@ -1,5 +1,5 @@
 # Template for public repository workflows that fetch private repository
-# This template uses actions/checkout@v4 with authentication token
+# This template uses actions/checkout@v6 with authentication token
 
 name: "Template - Fetch Private Repo"
 
@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout public repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         
       - name: Checkout private repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: vimex-sarl/delivery
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}

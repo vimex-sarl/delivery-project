@@ -43,7 +43,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun i --frozen-lockfile
       - name: Setup EAS
-        uses: expo/expo-github-action@v9.0.0
+        uses: expo/expo-github-action@9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -54,7 +54,6 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
-          cache: "gradle"
 
       - name: Create .env file
         run: |
@@ -122,7 +121,7 @@ jobs:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun i --frozen-lockfile
       - name: Setup EAS
-        uses: expo/expo-github-action@v9.0.0
+        uses: expo/expo-github-action@9.0.0
         with:
           eas-version: 20.1.0
           token: ${{ secrets.EXPO_TOKEN_PROD }}
@@ -133,7 +132,6 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           check-latest: true
-          cache: "gradle"
 
       - name: Create .env file
         run: |
