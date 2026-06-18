@@ -75,7 +75,7 @@ jobs:
 
       - name: Setup Java
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5.3.0
         with:
           java-version: "21"
           distribution: "temurin"
@@ -189,7 +189,7 @@ jobs:
 
       - name: Setup Java
         if: ${{ github.event.inputs.androidBuildOn != 'tadjaur' }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5.3.0
         with:
           java-version: "21"
           distribution: "temurin"
