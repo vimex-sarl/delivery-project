@@ -21,6 +21,7 @@ on:
         type: choice
         options:
           - "ubuntu-latest"
+          - "vps"
           - "tadjaur"
       androidBuildType:
         description: "Build type"
