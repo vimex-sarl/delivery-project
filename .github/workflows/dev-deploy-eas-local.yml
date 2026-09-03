@@ -16,6 +16,7 @@ on:
           - "driver-android"
           - "all-android"
           - "customer-ios"
+          - "customer"
       androidBuildOn:
         description: "Android build on"
         type: choice
@@ -40,7 +41,7 @@ env: # Define a shared environment variable for android and ios build.
 jobs:
   build-customer-android:
     runs-on: ${{ github.event.inputs.androidBuildOn || 'ubuntu-latest' }}
-    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'all-android') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-android' || github.event.inputs.buildApp == 'customer' || github.event.inputs.buildApp == 'all-android') }}
     timeout-minutes: 90
     defaults:
       run:
@@ -268,7 +269,7 @@ jobs:
 
   build-customer-ios:
     runs-on: 'macos-26'
-    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.buildApp == 'customer' || github.event.inputs.buildApp == 'customer-ios' || github.event.inputs.buildApp == 'all-ios') }}
     timeout-minutes: 90
     defaults:
       run:
