@@ -94,6 +94,8 @@ jobs:
           echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
           echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
           echo "GOOGLE_MAPS_API_KEY_BACKEND=${{ secrets.GOOGLE_MAPS_API_KEY_BACKEND_PROD }}" >> .env
+          echo "GEOSPLAF_API_URL=https://geosplaf.vimex-sarl.com" >> .env
+          echo "GEOSPLAF_API_KEY=${{ secrets.GEOSPLAF_API_KEY_PROD }}" >> .env
           cp .env services/api/.env
           cp .env services/workers/.env
 
