@@ -1,0 +1,219 @@
+# Runs the full Playwright e2e suite on every push to main.
+#
+# The suite is fully self-sufficient on a FRESH emulator (no imported data):
+# - the emulator starts empty; `e2e/utils/seed-users.ts` creates the fixed
+#   auth accounts (+ their Firestore users docs) the specs reference
+# - the specs bootstrap org/driver/merchant/products/stock through the same
+#   idempotent flows the local runs use (see e2e/utils/transaction-flow.ts)
+#
+# Budget: the whole job (install + builds + emulator + 50 sequential tests)
+# must stay under 30 minutes. Web apps are built in PARALLEL, the emulator
+# binaries/bun/playwright are cached, and Playwright REUSES the preview
+# servers (CI= is cleared so the config's reuseExistingServer applies).
+
+name: "[E2E] Full suite on main"
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/organization/**
+      - apps/customer/**
+      - apps/super-admin/**
+      - packages/frontend/**
+      - packages/core/**
+      - packages/backend/**
+      - services/api/**
+      - firebase.json
+      - .firebaserc
+      - .github/workflows/e2e.yml
+  workflow_dispatch:
+    inputs:
+      pRef:
+        description: "P Checkout Ref"
+        required: true
+        type: string
+        default: main
+      runOn:
+        description: "Run on"
+        required: true
+        type: choice
+        options:
+          - "ubuntu-latest"
+          - "vps"
+          - "tadjaur"
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: 1.3.13
+
+jobs:
+  e2e:
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    timeout-minutes: 90
+    # The web apps connect to the emulators ONLY when APP_ENV is "local"
+    # (packages/frontend/firebase/src/providers/firebase.tsx) — the API
+    # endpoint is baked at build time and must point at the local functions
+    # emulator, not the hosted backend.
+    env:
+      VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_DEV }}
+      VITE_APP_ENV: local
+      VITE_SERVER_API_ENDPOINT: http://localhost:5001/vimex-coursier-dev/us-central1/httpServer/api
+      VITE_PUBLIC_WEBAPP_URL: https://vimex-coursier-dev.web.app
+      VITE_GOOGLE_MAP_ID: ${{ secrets.DELIVERY_MAP_ID_WEB_DEV }}
+      VITE_GOOGLE_MAP_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}
+      VITE_GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+      VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+      VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}
+      VITE_STRIPE_CLIENT_SECRET: ${{ secrets.STRIPE_CLIENT_SECRET_DEV }}
+      VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_DEV }}
+      # E2E mode: hides dev-only banners (env ribbon, firebase-emulator
+      # warning) so screenshots look production-like; suppresses the
+      # notification-permission dialog.
+      VITE_E2E_MODE: "true"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - name: Setup Java
+        uses: actions/setup-java@v5.3.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          check-latest: true
+
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun i --frozen-lockfile
+
+      - name: Cache bun install
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Cache emulator binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-15.19.1
+
+      - name: Build the API (functions emulator)
+        run: bun run --cwd services/api build
+
+      - name: Build the workers (functions emulator)
+        run: bun run --cwd services/workers build
+
+      - name: Write the API env
+        run: |
+          cat > services/api/.env <<'EOF'
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY_DEV }}
+          STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_DEV }}
+          STRIPE_WEBHOOK_SECRET_SELF_ACCOUNT=${{ secrets.STRIPE_WEBHOOK_SECRET_SELF_ACCOUNT_DEV }}
+          STRIPE_WEBHOOK_SECRET_CONNECTED_ACCOUNT=${{ secrets.STRIPE_WEBHOOK_SECRET_CONNECTED_ACCOUNT_DEV }}
+          AUTHENTICATE_DOT_COM_TOKEN=${{ secrets.AUTHENTICATE_DOT_COM_TOKEN_DEV }}
+          AUTHENTICATE_DOT_COM_MEDALLION_ID=${{ secrets.AUTHENTICATE_DOT_COM_MEDALLION_ID_DEV }}
+          SLACK_ALERT_CHANNEL_WEBHOOK_URL=${{ secrets.SLACK_ALERT_CHANNEL_WEBHOOK_URL_DEV }}
+          SEND_GRID_API_KEY=${{ secrets.SEND_GRID_API_KEY_DEV }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID_DEV }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          PUBLIC_WEBAPP_URL=${{ vars.PUBLIC_WEBAPP_URL_DEV }}
+          APP_ENV=local
+          GOOGLE_MAPS_API_KEY_BACKEND=${{ secrets.GOOGLE_MAPS_API_KEY_BACKEND_DEV }}
+          GEOSPLAF_API_URL=https://sandbox.geosplaf.vimex-sarl.com
+          GEOSPLAF_API_KEY=${{ secrets.GEOSPLAF_API_KEY_DEV }}
+          EOF
+
+      - name: Write the Workers env
+        run: |
+          cp services/api/.env services/workers/.env
+
+      - name: Start the Firebase emulator (fresh, no import)
+        run: |
+          nohup npx -y firebase-tools@latest emulators:start \
+            --project vimex-coursier-dev \
+            --only auth,functions,firestore,database,pubsub,storage,eventarc \
+            > /tmp/emulator.log 2>&1 &
+          # ANY HTTP response means the emulator is up — the root paths
+          # return 404 (no route at /), so do NOT use curl -f here (it
+          # fails on non-2xx and the readiness check would never pass).
+          for i in $(seq 1 120); do
+            ok=1
+            for port in 8080 9099 5001; do
+              curl -s -o /dev/null "http://localhost:$port" || ok=0
+            done
+            if [ "$ok" -eq 1 ]; then echo "emulator ready after ~$((i * 5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "❌ emulator did not become ready"; tail -150 /tmp/emulator.log; exit 1
+
+      - name: Build the web apps (parallel)
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_DEV }}
+        run: |
+          set -e
+          (cd apps/customer && bun build:web) &
+          (cd apps/organization && bun build:web) &
+          (cd apps/driver && TAMAGUI_TARGET=web bun build:web) &
+          (cd apps/super-admin && bun build:web) &
+          wait
+
+      - name: Start the web previews
+        run: |
+          (cd apps/customer && nohup bun preview:web -- --port 5178 > /tmp/customer.log 2>&1 &)
+          (cd apps/organization && nohup bun preview:web -- --port 5179 > /tmp/org.log 2>&1 &)
+          (cd apps/driver && TAMAGUI_TARGET=web nohup bun preview:web -- --port 8081 > /tmp/driver.log 2>&1 &)
+          (cd apps/super-admin && nohup bun preview:web -- --port 5180 > /tmp/super-admin.log 2>&1 &)
+          for i in $(seq 1 60); do
+            ok=1
+            for port in 5178 5179 8081 5180; do
+              curl -s -o /dev/null "http://localhost:$port" || ok=0
+            done
+            if [ "$ok" -eq 1 ]; then echo "previews ready after ~$((i * 5))s"; exit 0; fi
+            sleep 5
+          done
+          echo "❌ previews did not become ready"; exit 1
+
+      - name: Seed the emulator users
+        run: bun e2e/utils/seed-users.ts
+
+      - name: Clean stale e2e artifacts
+        run: bun e2e/utils/cleanup.ts
+
+      - name: Run the e2e suite
+        # CI= (empty) makes the playwright config REUSE the preview servers
+        # above (reuseExistingServer) instead of spawning dev-mode servers on
+        # the same ports, and keeps retries at 0 for the time budget.
+        run: CI= npx playwright test e2e --workers=1 --reporter=html,list
+
+      - name: Upload the Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14

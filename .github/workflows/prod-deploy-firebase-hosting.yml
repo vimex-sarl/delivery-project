@@ -1,0 +1,273 @@
+name: "[PROD] Deploy Firebase Hosting"
+on:
+  workflow_dispatch:
+    inputs:
+      pRef:
+        description: "P Checkout Ref"
+        required: true
+        type: string
+        default: main
+      runOn:
+        description: "Run on"
+        required: true
+        type: choice
+        options:
+          - "ubuntu-latest"
+          - "vps"
+          - "tadjaur"
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+env:
+  WORK_FLOW_FILE_NAME: prod-deploy-firebase-hosting
+
+jobs:
+  changes:
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    outputs:
+      # True if changes are detected or tag does not exist.
+      changeDetected: ${{ steps.filter.outputs.src == 'true' || steps.tag_check.outputs.exists == 'false' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          TAG_NAME="${{ env.WORK_FLOW_FILE_NAME }}"
+          if git ls-remote --tags origin "refs/tags/$TAG_NAME" | grep "$TAG_NAME" > /dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      - uses: dorny/paths-filter@v4
+        id: filter
+        if: steps.tag_check.outputs.exists == 'true'
+        with:
+          base: ${{ env.WORK_FLOW_FILE_NAME }}
+          filters: |
+            src:
+              - '.github/workflows/prod-deploy-firebase-hosting.yml'
+              - 'apps/organization/**'
+              - 'apps/customer/**'
+              - 'apps/super-admin/**'
+              - 'packages/core/**'
+              - 'packages/frontend/**'
+              - 'firebase.json'
+              - '.firebaserc'
+              - 'bun.lock'
+              - 'package.json'
+
+  build_and_deploy_customer:
+    needs: changes
+    if: ${{ needs.changes.outputs.changeDetected }}
+    defaults:
+      run:
+        working-directory: apps/customer
+    timeout-minutes: 10
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Allow Bots to serve the website
+        run: |
+          echo 'Allow: /' >> public/robots.txt
+      - name: Generate google verification file
+        # run: |
+        #   filename=$(echo "${{ secrets.GOOGLE_SITE_VERIFICATION_PROD }}" | grep -oP '[^ ]+\.html') || true
+        #   echo "${{ secrets.GOOGLE_SITE_VERIFICATION_PROD }}" > public/$filename || true
+        run: |
+          echo "google-site-verification: google5659b4e036a2ef1f.html" > public/google5659b4e036a2ef1f.html
+
+      - run: bun run build:web
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_PROD }}
+          VITE_GOOGLE_MAP_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.DELIVERY_MAP_ID_WEB_PROD }}
+          VITE_GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_PROD }}
+          VITE_PUBLIC_WEBAPP_URL: https://vimex-coursier.web.app
+          VITE_SERVER_API_ENDPOINT: https://vimex-coursier.web.app/api
+          VITE_APP_ENV: prod
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PROD }}
+          channelId: live
+          projectId: vimex-coursier
+          target: coursier
+
+  build_and_deploy_admin:
+    needs: changes
+    if: ${{ needs.changes.outputs.changeDetected }}
+    defaults:
+      run:
+        working-directory: apps/organization
+    timeout-minutes: 10
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Allow Bots to serve the website
+        run: |
+          echo 'Allow: /' >> public/robots.txt
+      - name: Generate google verification file
+        run: |
+          echo "google-site-verification: google5659b4e036a2ef1f.html" > public/google5659b4e036a2ef1f.html
+
+      - run: bun run build:web
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_PROD }}
+          VITE_GOOGLE_MAP_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_PROD }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.DELIVERY_MAP_ID_WEB_PROD }}
+          VITE_GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_PROD }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_PROD }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_PROD }}
+          VITE_PUBLIC_WEBAPP_URL: https://admin-vimex.web.app
+          VITE_SERVER_API_ENDPOINT: https://admin-vimex.web.app/api
+          VITE_APP_ENV: prod
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PROD }}
+          channelId: live
+          projectId: vimex-coursier
+          target: admin
+
+  build_and_deploy_super_admin:
+    needs: changes
+    if: ${{ needs.changes.outputs.changeDetected }}
+    name: Build and Deploy Super Admin
+    environment: production
+    defaults:
+      run:
+        working-directory: apps/super-admin
+    timeout-minutes: 10
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - run: bun run build:web
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_SUPER_ADMIN_WEB_PROD }}
+          VITE_APP_ENV: prod
+          VITE_PUBLIC_WEBAPP_URL: https://super-admin-vimex.web.app
+          VITE_SERVER_API_ENDPOINT: /api
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_PROD }}
+          channelId: live
+          projectId: vimex-coursier
+          target: super-admin
+
+  update-tag_customer:
+    needs: build_and_deploy_customer
+    if: ${{ needs.build_and_deploy_customer.result == 'success' }}
+    timeout-minutes: 7
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+
+      # Update workflow base tag.
+      - name: Update tag to current commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag -f "$TAG_NAME"
+          git push origin -f "$TAG_NAME"
+        env:
+          TAG_NAME: customer-${{ env.WORK_FLOW_FILE_NAME }}
+
+  update-tag_admin:
+    needs: build_and_deploy_admin
+    if: ${{ needs.build_and_deploy_admin.result == 'success' }}
+    timeout-minutes: 7
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+
+      # Update workflow base tag.
+      - name: Update tag to current commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag -f "$TAG_NAME"
+          git push origin -f "$TAG_NAME"
+        env:
+          TAG_NAME: admin-${{ env.WORK_FLOW_FILE_NAME }}

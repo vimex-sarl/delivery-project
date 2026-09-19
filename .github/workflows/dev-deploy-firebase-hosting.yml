@@ -1,0 +1,184 @@
+# This workflow deploys the webapp to Firebase Hosting when changes
+# to the webapp or any of the common files are pushed to the main branch.
+
+name: "[DEV] Deploy Firebase Hosting"
+on:
+  # Temporary disable deployment on push
+  push:
+    branches:
+      - main
+    paths:
+      - apps/organization/**
+      - apps/customer/**
+      - apps/super-admin/**
+      - packages/core/**
+      - packages/frontend/**
+      - firebase.json
+      - .firebaserc
+      - bun.lock
+      - package.json
+      - .github/workflows/dev-deploy-firebase-hosting.yml
+  workflow_dispatch:
+    inputs:
+      pRef:
+        description: "P Checkout Ref"
+        required: true
+        type: string
+        default: main
+      runOn:
+        description: "Run on"
+        required: true
+        type: choice
+        options:
+          - "ubuntu-latest"
+          - "vps"
+          - "tadjaur"
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy_customer:
+    name: Build and Deploy Customer
+    defaults:
+      run:
+        working-directory: apps/customer
+    timeout-minutes: 7
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+      - run: bun run build:web
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_CUSTOMER_WEB_DEV }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.DELIVERY_MAP_ID_WEB_DEV }}
+          VITE_GOOGLE_MAP_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}
+          VITE_GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}
+          VITE_STRIPE_CLIENT_SECRET: ${{ secrets.STRIPE_CLIENT_SECRET_DEV }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_DEV }}
+          VITE_PUBLIC_WEBAPP_URL: https://vimex-coursier-dev.web.app
+          VITE_SERVER_API_ENDPOINT: https://vimex-coursier-dev.web.app/api
+          VITE_APP_ENV: dev
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_DEV }}
+          channelId: live
+          projectId: vimex-coursier-dev
+          target: coursier
+
+  build_and_deploy_admin:
+    name: Build and Deploy Admin
+    defaults:
+      run:
+        working-directory: apps/organization
+    timeout-minutes: 7
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - name: Disallow Bots to serve the website
+        run: |
+          echo 'Disallow: /' >> public/robots.txt
+      - run: bun run build:web
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_ADMIN_WEB_DEV }}
+          VITE_GOOGLE_MAP_ID: ${{ secrets.DELIVERY_MAP_ID_WEB_DEV }}
+          VITE_GOOGLE_MAP_STYLE_ID: ${{ secrets.GOOGLE_MAPS_STYLE_ID_DEV }}
+          VITE_GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY_DEV }}
+          VITE_GOOGLE_PLACE_API_KEY: ${{ secrets.GOOGLE_PLACE_API_KEY_DEV }}
+          VITE_STRIPE_CLIENT_SECRET: ${{ secrets.STRIPE_CLIENT_SECRET_DEV }}
+          VITE_FCM_VAPID_KEY: ${{ vars.FCM_WEB_PUSH_VAPID_KEY_DEV }}
+          VITE_PUBLIC_WEBAPP_URL: https://admin-vimex-dev.web.app
+          VITE_SERVER_API_ENDPOINT: https://admin-vimex-dev.web.app/api
+          VITE_APP_ENV: dev
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_DEV }}
+          channelId: live
+          projectId: vimex-coursier-dev
+          target: admin # if target is not specified, the default target or all target in .firebaserc will be deployed
+
+  build_and_deploy_super_admin:
+    name: Build and Deploy Super Admin
+    defaults:
+      run:
+        working-directory: apps/super-admin
+    timeout-minutes: 10
+    runs-on: ${{ github.event.inputs.runOn || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: vimex-sarl/delivery
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          ref: ${{ github.event.inputs.pRef || 'main' }}
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version: 1.3.13
+      - name: install dependencies
+        run: bun i --frozen-lockfile
+      - run: bun run build:web
+        env:
+          VITE_FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON_SUPER_ADMIN_WEB_DEV }}
+          VITE_APP_ENV: dev
+          VITE_PUBLIC_WEBAPP_URL: https://super-admin-vimex-dev.web.app
+          VITE_SERVER_API_ENDPOINT: /api
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Pinned exact: Node 24.17.0 has an http.Agent regression that makes
+          # node-fetch (used by firebase-tools' bundled google-auth-library) throw
+          # "Premature close" on the sts.googleapis.com token exchange, breaking
+          # WIF-authenticated deploys. Fixed in 24.18.0. A bare '24' is not enough
+          # — setup-node serves the runner-cached 24.17.0. Bump/relax once newer
+          # 24.x are uniformly safe. See nodejs/node#63989 (fix: #64004).
+          node-version: '24.18.0'
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_VIMEX_COURSIER_DEV }}
+          channelId: live
+          projectId: vimex-coursier-dev
+          target: super-admin
