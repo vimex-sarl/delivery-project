@@ -50,6 +50,7 @@ jobs:
           echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> .env
           echo "SMTP_PORT=${{ secrets.SMTP_PORT }}" >> .env
           echo "SMTP_USER=${{ secrets.SMTP_USER }}" >> .env
+          echo "MERCHANT_BOT_TOKEN_SECRET=${{ secrets.MERCHANT_BOT_TOKEN_SECRET_DEV }}" >> .env
           echo "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" >> .env
           echo "APP_ENV=dev" >> .env
           echo "GOOGLE_MAPS_API_KEY_BACKEND=${{ secrets.GOOGLE_MAPS_API_KEY_BACKEND_DEV }}" >> .env
